@@ -6,6 +6,15 @@ import numpy as np
 import subprocess
 import io
 import subprocess
+from optparse import OptionParser
+
+parser = OptionParser()
+
+parser.add_option("-r", "--run",
+                  action="store_true", dest="run", default=False,
+                  help="run the gphoto commands")
+
+(options, args) = parser.parse_args()
 
 #initilize video loopback dev
 n_dev = 5
@@ -48,17 +57,19 @@ if __name__=="__main__":
     device_map = {'demo1':'/dev/video10', 'demo2':'/dev/video11', 'studio1':'/dev/video12', 'studio2':'/dev/video13'}
 
     camera_dict = get_camera_dict()
-    subprocess.call(['ls','-l','-a'],shell=True)
+    processes = []
+
     for camera in device_map:
         port = camera_dict[camera]
         dev = device_map[camera]
         print(camera,port,dev)
         start_video_command = start_video.format(port,dev)
         print(start_video_command)
-        print(start_video_command.split(" "))
-        subprocess.Popen([start_video_command],shell=True)
-        #run_camera(port,dev)
+        if options.run: processes.append(subprocess.Popen([start_video_command],shell=True))
 
-    #gphoto_command = start_video.format()
-    #os.system()
+
+input("Press Enter to continue...")
+
+for process in processes:
+    process.kill()
 
