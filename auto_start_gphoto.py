@@ -45,10 +45,13 @@ def get_camera_dict():
     usb_list = list(map(get_usb_num, camera_list))
     ownername_dict = {}    
     for port in usb_list:
-        ownername_dict[get_owner_name(port)] = port
+        try:
+            ownername_dict[get_owner_name(port)] = port
+        except:
+            print("port {} in use".format(port))
     return ownername_dict
 
-start_video = "gphoto2 --stdout --capture-movie --port=usb:{} | ffmpeg -i - -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 {}"
+start_video = "gnome-terminal -- sh -c 'gphoto2 --stdout --capture-movie --port=usb:{} | ffmpeg -i - -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 {} '"
 
 def run_camera(port,dev):
     os.system(start_video.format(port,dev))
@@ -58,18 +61,15 @@ if __name__=="__main__":
 
     camera_dict = get_camera_dict()
     processes = []
+    with open("./setup_cams.sh", 'w') as f:
+        f.write('#!/bin/bash\n')
+        for camera in camera_dict:
+            port, dev = camera_dict[camera], device_map[camera]
+            start_video_command = start_video.format(port,dev)
+            print(start_video_command)
+            f.write('{}\n'.format(start_video_command))
+            if options.run: os.system(start_video)
 
-    for camera in device_map:
-        port = camera_dict[camera]
-        dev = device_map[camera]
-        print(camera,port,dev)
-        start_video_command = start_video.format(port,dev)
-        print(start_video_command)
-        if options.run: processes.append(subprocess.Popen([start_video_command],shell=True))
+#input("Press Enter to continue...")
 
-
-input("Press Enter to continue...")
-
-for process in processes:
-    process.kill()
 
