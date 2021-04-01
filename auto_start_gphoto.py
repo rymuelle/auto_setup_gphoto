@@ -78,6 +78,8 @@ if __name__=="__main__":
             camera_dict = get_camera_dict(verbose=False)
         except KeyboardInterrupt: 
             break
+        if not options.run:
+            break
         
 input("Press Enter to reset cameras...")
 
@@ -87,6 +89,6 @@ for v,d in zip(video_process,dev_process):
     d.terminate()
     v.terminate()
 
-time.sleep(2)  
-input("Press Enter to close program...")
+time.sleep(2) 
+#input("Press Enter to close program...")
 
