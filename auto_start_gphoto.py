@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #/dev/video0 == obs virtual camera
 #turn auto power off to disable on all cameras
 
@@ -78,4 +79,5 @@ for v,d in zip(video_process,dev_process):
     d.terminate()
     v.terminate()
     
+input("Press Enter to reset cameras...")
 
