@@ -7,6 +7,7 @@ import numpy as np
 import subprocess
 import signal
 from optparse import OptionParser
+import time
 
 def get_text_command(cmd): 
     return subprocess.check_output(cmd, shell=True).decode('utf-8')
@@ -22,9 +23,9 @@ def get_owner_name(usb):
         if "Current: " in out:
             return out.replace("Current: ", "")
 
-def get_camera_dict():
+def get_camera_dict(verbose=False):
     result = get_text_command("gphoto2 --auto-detect")
-    print(result)
+    if verbose: print(result)
     camera_list = result.split("\n")
     camera_list = camera_list[2:-1]
     usb_list = list(map(get_usb_num, camera_list))
@@ -48,29 +49,36 @@ if __name__=="__main__":
                   action="store_true", dest="run", default=False,
                   help="run the gphoto commands")
     (options, args) = parser.parse_args()
-
-    camera_dict = get_camera_dict()
-    dev_process = []
-    video_process = []
-
-    for camera in camera_dict:
-        port, dev = camera_dict[camera], device_map[camera]
-        start_video_command = start_video.format(port,dev)
-        send_to_dev_command = send_to_dev.format(dev)
-        print("===============")
-        print(start_video_command)
-        print(send_to_dev_command)
-        if options.run:
-            video_popen = subprocess.Popen(
-                start_video_command.split(" "),
-                stdout=subprocess.PIPE)
-            dev_popen = subprocess.Popen(
-                send_to_dev_command.split(" "),
-                stdin=video_popen.stdout,
-                stdout=subprocess.PIPE)
-            dev_process.append(dev_popen)
-            video_process.append(video_popen)
-                
+    
+    camera_dict = get_camera_dict(verbose=True)
+    while True:
+        try:
+            
+            dev_process = []
+            video_process = []
+    
+            for camera in camera_dict:
+                port, dev = camera_dict[camera], device_map[camera]
+                start_video_command = start_video.format(port,dev)
+                send_to_dev_command = send_to_dev.format(dev)
+                print("===============")
+                print(start_video_command)
+                print(send_to_dev_command)
+                if options.run:
+                    video_popen = subprocess.Popen(
+                        start_video_command.split(" "),
+                        stdout=subprocess.PIPE)
+                    dev_popen = subprocess.Popen(
+                        send_to_dev_command.split(" "),
+                        stdin=video_popen.stdout,
+                        stdout=subprocess.PIPE)
+                    dev_process.append(dev_popen)
+                    video_process.append(video_popen)
+            time.sleep(2)
+            camera_dict = get_camera_dict(verbose=False)
+        except KeyboardInterrupt: 
+            break
+        
 input("Press Enter to reset cameras...")
 
 for v,d in zip(video_process,dev_process):
@@ -78,6 +86,7 @@ for v,d in zip(video_process,dev_process):
     v.stdout.close()
     d.terminate()
     v.terminate()
-    
-input("Press Enter to reset cameras...")
+
+time.sleep(2)  
+input("Press Enter to close program...")
 
