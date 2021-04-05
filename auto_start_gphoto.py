@@ -43,6 +43,27 @@ send_to_dev = "/usr/bin/ffmpeg -i - -vcodec rawvideo -pix_fmt yuv420p -threads 0
 
 device_map = {'demo1':'/dev/video10', 'demo2':'/dev/video11', 'studio1':'/dev/video12', 'studio2':'/dev/video13'}
 
+def attach_camera(dev_list,video_list, camera_dict, run, verbose=False):
+    for camera in camera_dict:
+        port, dev = camera_dict[camera], device_map[camera]
+        start_video_command = start_video.format(port,dev)
+        send_to_dev_command = send_to_dev.format(dev)
+        if verbose:
+            print("===============")
+            print(start_video_command)  
+            print(send_to_dev_command)
+        if run:
+            video_popen = subprocess.Popen(
+                        start_video_command.split(" "),
+                        stdout=subprocess.PIPE)
+            dev_popen = subprocess.Popen(
+                        send_to_dev_command.split(" "),
+                        stdin=video_popen.stdout,
+                        stdout=subprocess.PIPE)
+            dev_process.append(dev_popen)       
+            video_process.append(video_popen)
+        return dev_process, video_process
+
 if __name__=="__main__":
     parser = OptionParser()
     parser.add_option("-r", "--run",
@@ -51,9 +72,9 @@ if __name__=="__main__":
     (options, args) = parser.parse_args()
     
     camera_dict = get_camera_dict(verbose=True)
+
     while True:
         try:
-            
             dev_process = []
             video_process = []
     
@@ -80,6 +101,7 @@ if __name__=="__main__":
             break
         if not options.run:
             break
+        break
         
 input("Press Enter to reset cameras...")
 
@@ -90,5 +112,5 @@ for v,d in zip(video_process,dev_process):
     v.terminate()
 
 time.sleep(2) 
-#input("Press Enter to close program...")
+input("Press Enter to close program...")
 
