@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Start_DSLRS
-Exec=python3 /home/physics/Develop/auto_setup_gphoto/auto_start_gphoto.py -r -l
+Name=Start_loopback
+Exec=python3 /home/physics/Develop/auto_setup_gphoto/gen_loopback.py -r
 Icon=/home/physics/Develop/auto_setup_gphoto/img_461960.png
 Terminal=true

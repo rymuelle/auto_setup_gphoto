@@ -45,13 +45,13 @@ device_map = {'demo1':'/dev/video10', 'demo2':'/dev/video11', 'studio1':'/dev/vi
 
 def attach_camera(dev_list,video_list, camera_dict, run, verbose=False):
     for camera in camera_dict:
+        print(camera)
         port, dev = camera_dict[camera], device_map[camera]
         start_video_command = start_video.format(port,dev)
         send_to_dev_command = send_to_dev.format(dev)
         if verbose:
             print("===============")
-            print(start_video_command)  
-            print(send_to_dev_command)
+            print("{} | {}".format(start_video_command, send_to_dev_command)) 
         if run:
             video_popen = subprocess.Popen(
                         start_video_command.split(" "),
@@ -62,55 +62,42 @@ def attach_camera(dev_list,video_list, camera_dict, run, verbose=False):
                         stdout=subprocess.PIPE)
             dev_process.append(dev_popen)       
             video_process.append(video_popen)
-        return dev_process, video_process
+    return dev_process, video_process
 
 if __name__=="__main__":
     parser = OptionParser()
     parser.add_option("-r", "--run",
                   action="store_true", dest="run", default=False,
                   help="run the gphoto commands")
+    parser.add_option("-l", "--loop",
+                  action="store_true", dest="loop", default=False,
+                  help="keep checking for cameras to reattach")
     (options, args) = parser.parse_args()
     
     camera_dict = get_camera_dict(verbose=True)
+    dev_process = []
+    video_process = []
 
-    while True:
-        try:
-            dev_process = []
-            video_process = []
-    
-            for camera in camera_dict:
-                port, dev = camera_dict[camera], device_map[camera]
-                start_video_command = start_video.format(port,dev)
-                send_to_dev_command = send_to_dev.format(dev)
-                print("===============")
-                print(start_video_command)
-                print(send_to_dev_command)
-                if options.run:
-                    video_popen = subprocess.Popen(
-                        start_video_command.split(" "),
-                        stdout=subprocess.PIPE)
-                    dev_popen = subprocess.Popen(
-                        send_to_dev_command.split(" "),
-                        stdin=video_popen.stdout,
-                        stdout=subprocess.PIPE)
-                    dev_process.append(dev_popen)
-                    video_process.append(video_popen)
-            time.sleep(2)
-            camera_dict = get_camera_dict(verbose=False)
-        except KeyboardInterrupt: 
-            break
-        if not options.run:
-            break
-        break
-        
-input("Press Enter to reset cameras...")
+    dev_process, video_process = attach_camera(dev_process, video_process, camera_dict, options.run, verbose=True)
+    if options.loop:
+        while True:
+            try:
+                dev_process, video_process = attach_camera(dev_process, video_process, camera_dict, options.run, verbose=True)
+                time.sleep(2)
+                camera_dict = get_camera_dict(verbose=False)
+            except KeyboardInterrupt: 
+                break
+            if not options.run:
+                break
 
-for v,d in zip(video_process,dev_process):
-    print("killed")
-    v.stdout.close()
-    d.terminate()
-    v.terminate()
+    input("Press Enter to reset cameras...")
 
-time.sleep(2) 
-input("Press Enter to close program...")
+    for v,d in zip(video_process,dev_process):      
+        v.stdout.close()
+        d.terminate()
+        v.terminate()
+        print("killed: {} {}".format(v,d))
+
+    time.sleep(2) 
+    input("Press Enter to close program...")
 
